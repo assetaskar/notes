@@ -1,21 +1,50 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Auth from "../views/Auth.vue";
 
 const routes = [
   {
     path: "/",
-    name: "Auth",
+    name: "auth",
     component: Auth,
+    beforeEnter: (to, from, next) => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          next({ name: "notes", params: { id: user.uid } });
+        } else {
+          next();
+        }
+      });
+      unsubscribe();
+    },
   },
-  // {
-  //   path: "/about",
-  //   name: "About",
-  //   // route level code-splitting
-  //   // this generates a separate chunk (about.[hash].js) for this route
-  //   // which is lazy-loaded when the route is visited.
-  //   component: () =>
-  //     import(/* webpackChunkName: "about" */ "../views/About.vue"),
-  // },
+  {
+    path: "/notes/:id",
+    name: "notes",
+    component: () => {
+      return import(/* webpackChunkName: "notes" */ "../views/Notes.vue");
+    },
+    beforeEnter: (to, from, next) => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          next({ name: "auth" });
+        } else if (to.params.id !== user.uid) {
+          next({ params: { id: user.uid } });
+        } else {
+          next();
+        }
+      });
+      unsubscribe();
+    },
+  },
+  {
+    path: "/:pathMatch(.*)",
+    redirect: {
+      name: "auth",
+    },
+  },
 ];
 
 const router = createRouter({

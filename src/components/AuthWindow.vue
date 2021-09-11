@@ -1,7 +1,7 @@
 <template>
   <div class="account">
-    <h1 class="account__h1">{{ title }}</h1>
-    <the-form @submit.prevent="submitHandler" :btn="btn">
+    <h1 class="account__h1">{{ name.title }}</h1>
+    <the-form @submit.prevent="submitHandler" :btn="name.btn">
       <the-form-input
         label="Email*"
         placeholder="yourname@company.com"
@@ -17,9 +17,9 @@
       />
     </the-form>
     <div class="account__toggle">
-      {{ toggle.text }}
+      {{ name.toggle.text }}
       <button class="account__toggle-btn" @click="toggleHandler">
-        {{ toggle.btn }}
+        {{ name.toggle.btn }}
       </button>
     </div>
     <div class="account__footer">
@@ -30,8 +30,15 @@
 
 <script>
 import { computed, reactive, ref } from "@vue/reactivity";
+import { useRouter } from "vue-router";
 import useVuelidate from "@vuelidate/core";
 import { required, email, minLength } from "@vuelidate/validators";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
 import TheForm from "./TheForm.vue";
 import TheFormInput from "./TheFormInput.vue";
 
@@ -51,37 +58,66 @@ export default {
     };
     const v$ = useVuelidate(rules, state);
 
-    const auth = ref("signIn");
+    const authType = ref("signIn");
 
-    const title = computed(() =>
-      auth.value === "signIn" ? "Создать учетную запись" : "Вход в Ваш аккаунт"
-    );
-    const btn = computed(() =>
-      auth.value === "signIn" ? "Зарегистрируйтесь сейчас" : "Войти"
-    );
-    const toggle = computed(() =>
-      auth.value === "signIn"
-        ? { text: "У меня есть аккаунт.", btn: "Войти" }
-        : { text: "У вас нет аккаунта?", btn: "Зарегистрируйтесь сейчас" }
+    const name = computed(() =>
+      authType.value === "signIn"
+        ? {
+            title: "Создать учетную запись",
+            btn: "Зарегистрируйтесь сейчас",
+            toggle: { text: "У меня есть аккаунт.", btn: "Войти" },
+          }
+        : {
+            title: "Вход в Ваш аккаунт",
+            btn: "Войти",
+            toggle: {
+              text: "У вас нет аккаунта?",
+              btn: "Зарегистрируйтесь сейчас",
+            },
+          }
     );
 
     const toggleHandler = () => {
       v$.value.$reset();
-      auth.value === "signIn"
-        ? (auth.value = "login")
-        : (auth.value = "signIn");
+      authType.value === "signIn"
+        ? (authType.value = "login")
+        : (authType.value = "signIn");
+    };
+
+    const auth = getAuth();
+    const router = useRouter();
+    const signIn = () => {
+      createUserWithEmailAndPassword(auth, state.email, state.password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          router.push({ name: "notes", params: { id: user.uid } });
+        })
+        .catch((error) => {
+          console.log(error.errorCode);
+          console.log(error.errorMessage);
+        });
+    };
+    const login = () => {
+      signInWithEmailAndPassword(auth, state.email, state.password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          router.push({ name: "notes", params: { id: user.uid } });
+        })
+        .catch((error) => {
+          console.log(error.errorCode);
+          console.log(error.errorMessage);
+        });
     };
     const submitHandler = () => {
-      return;
+      v$.value.$touch();
+      if (v$.value.$error) return;
+      authType.value === "signIn" ? signIn() : login();
     };
 
     return {
       v$,
       state,
-      auth,
-      title,
-      btn,
-      toggle,
+      name,
       submitHandler,
       toggleHandler,
     };
