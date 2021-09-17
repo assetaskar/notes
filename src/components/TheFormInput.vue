@@ -37,6 +37,7 @@ export default {
       required: true,
       type: String,
     },
+    modelModifiers: null,
     placeholder: {
       type: String,
     },

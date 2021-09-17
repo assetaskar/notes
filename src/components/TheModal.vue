@@ -44,10 +44,12 @@ export default {
       required: true,
       type: String,
     },
+    inputModifiers: null,
     textarea: {
       required: true,
       type: String,
     },
+    textareaModifiers: null,
   },
   emits: ["close", "handler", "update:input", "update:textarea"],
 };

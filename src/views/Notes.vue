@@ -8,21 +8,22 @@
         </div>
       </header>
       <div>
-        <notes-item v-for="note of sortData" :key="note.id" :data="note" />
+        <notes-item
+          v-for="note of sortData"
+          :key="note.id"
+          :data="note"
+          @edit="openModalEdit"
+        />
       </div>
     </div>
   </main>
-  <button
-    class="modal-open"
-    v-if="!isOpenModal"
-    @click="openModalHandler"
-  ></button>
+  <button class="modal-open" v-if="!isOpenModal" @click="openModalAdd"></button>
   <the-modal
     :isOpen="isOpenModal"
     @close="closeModalHandler"
-    @handler="pushData"
-    v-model:input="input"
-    v-model:textarea="textarea"
+    @handler="modalHandler"
+    v-model:input.trim="input"
+    v-model:textarea.trim="textarea"
   />
 </template>
 
@@ -40,6 +41,7 @@ import {
   onChildAdded,
   onChildRemoved,
   onChildChanged,
+  update,
 } from "firebase/database";
 
 import TheSearch from "@/components/TheSearch.vue";
@@ -60,6 +62,7 @@ export default {
     const textarea = ref("");
     const isOpenModal = ref(false);
     const search = ref("");
+    const modalHandler = ref(null);
 
     const unsubscribeAdded = onChildAdded(notesRef, (note) => {
       data.value.push({
@@ -91,7 +94,14 @@ export default {
       );
     });
 
-    function openModalHandler() {
+    function openModalAdd() {
+      modalHandler.value = pushData;
+      isOpenModal.value = true;
+    }
+    function openModalEdit(note) {
+      modalHandler.value = editData.bind(null, note.id);
+      input.value = note.title;
+      textarea.value = note.description;
       isOpenModal.value = true;
     }
     function closeModalHandler() {
@@ -100,10 +110,19 @@ export default {
     }
     function reset() {
       input.value = textarea.value = "";
+      modalHandler.value = null;
     }
     function pushData() {
       const newPostRef = push(notesRef);
       set(newPostRef, {
+        title: input.value,
+        description: textarea.value,
+        timestamp: Date.now(),
+      });
+      closeModalHandler();
+    }
+    function editData(id) {
+      update(fb_ref(db, `notes/${userId}/${id}`), {
         title: input.value,
         description: textarea.value,
         timestamp: Date.now(),
@@ -139,11 +158,12 @@ export default {
       input,
       textarea,
       isOpenModal,
-      openModalHandler,
+      openModalAdd,
       closeModalHandler,
-      pushData,
       search,
       exit,
+      modalHandler,
+      openModalEdit,
     };
   },
 };
@@ -154,7 +174,7 @@ export default {
   background-color: #ebebeb;
   min-height: 100vh;
   width: 100%;
-  padding: 15px 0;
+  padding: 15px 0 70px;
 
   &__header {
     display: flex;

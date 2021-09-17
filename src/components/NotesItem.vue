@@ -11,43 +11,29 @@
     <div class="time">{{ note.timestamp }}</div>
     <div class="buttons">
       <button class="buttons__btn dots"></button>
-      <button class="buttons__btn edit" @click="openModal"></button>
+      <button class="buttons__btn edit" @click="$emit('edit', note)"></button>
       <button class="buttons__btn delete" @click="del"></button>
     </div>
   </div>
-  <the-modal
-    :isOpen="isOpen"
-    v-model:input="change.title"
-    v-model:textarea="change.description"
-    @close="closeModal"
-    @handler="edit"
-  />
 </template>
 
 <script>
-import { reactive, ref, toRefs } from "@vue/reactivity";
+import { toRefs } from "@vue/reactivity";
 
-import { getDatabase, ref as fb_ref, remove, update } from "@firebase/database";
+import { getDatabase, ref as fb_ref, remove } from "@firebase/database";
 import { getAuth } from "@firebase/auth";
-
-import TheModal from "./TheModal.vue";
 
 export default {
   name: "NotesItem",
-  components: { TheModal },
   props: {
     data: {
       required: true,
       type: Object,
     },
   },
+  emits: ["edit"],
   setup(props) {
     const { data: note } = toRefs(props);
-    const change = reactive({
-      title: "",
-      description: "",
-    });
-    const isOpen = ref(false);
 
     const db = getDatabase();
     const auth = getAuth();
@@ -56,28 +42,8 @@ export default {
     function del() {
       remove(fb_ref(db, `notes/${userId}/${note.value.id}`));
     }
-    function edit() {
-      update(fb_ref(db, `notes/${userId}/${note.value.id}`), {
-        title: change.title,
-        description: change.description,
-        timestamp: Date.now(),
-      });
-      closeModal();
-    }
-    function openModal() {
-      change.title = note.value.title;
-      change.description = note.value.description;
-      isOpen.value = true;
-    }
-    function closeModal() {
-      isOpen.value = false;
-      reset();
-    }
-    function reset() {
-      change.title = change.description = "";
-    }
 
-    return { note, del, edit, isOpen, change, openModal, closeModal };
+    return { note, del };
   },
 };
 </script>
@@ -88,7 +54,7 @@ export default {
   min-height: 105px;
   border-radius: 10px;
   background-color: #fff;
-  padding: 20px 35px 20px 20px;
+  padding: 13px 35px 20px 20px;
   font-size: 14px;
   margin-bottom: 10px;
   position: relative;
@@ -98,7 +64,12 @@ export default {
 
 .title {
   flex-grow: 1;
-  margin-bottom: 8px;
+  font-weight: normal;
+
+  &::first-line {
+    line-height: 2;
+    font-weight: bold;
+  }
 }
 
 .description {
@@ -107,9 +78,10 @@ export default {
   color: rgb(95, 95, 95);
   white-space: pre-wrap;
 
-  &.bold {
+  &.bold::first-line {
     font-weight: bold;
     color: #000;
+    line-height: 2;
   }
 }
 
