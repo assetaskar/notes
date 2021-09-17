@@ -6,14 +6,14 @@
         label="Email*"
         placeholder="yourname@company.com"
         :validation="v$.email"
-        v-model="state.email"
+        v-model.trim="state.email"
       />
       <the-form-input
         type="password"
         label="Пароль*"
         placeholder="******"
         :validation="v$.password"
-        v-model="state.password"
+        v-model.trim="state.password"
       />
     </the-form>
     <div class="account__toggle">

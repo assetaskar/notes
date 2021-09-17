@@ -8,6 +8,7 @@
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       @blur="validation.$touch"
+      autocomplete="off"
     />
     <p v-for="error of validation.$errors" :key="error.$uid">
       {{ error.$message }}
