@@ -7,13 +7,22 @@
           <button class="main__exit-btn" @click="exit"></button>
         </div>
       </header>
-      <div>
+      <div v-if="isLoading">
+        <the-loader />
+        <the-loader />
+        <the-loader />
+      </div>
+      <div v-else-if="sortData.length">
         <notes-item
           v-for="note of sortData"
           :key="note.id"
           :data="note"
           @edit="openModalEdit"
         />
+      </div>
+      <div v-else class="not">
+        <img src="../assets/notes.svg" alt="notes-icon" />
+        <p>Нет заметок</p>
       </div>
     </div>
   </main>
@@ -38,19 +47,18 @@ import {
   ref as fb_ref,
   push,
   set,
-  onChildAdded,
-  onChildRemoved,
-  onChildChanged,
   update,
+  onValue,
 } from "firebase/database";
 
 import TheSearch from "@/components/TheSearch.vue";
 import NotesItem from "@/components/NotesItem.vue";
-import TheModal from "../components/TheModal.vue";
+import TheModal from "@/components/TheModal.vue";
+import TheLoader from "@/components/TheLoader.vue";
 
 export default {
   name: "Notes",
-  components: { TheSearch, NotesItem, TheModal },
+  components: { TheSearch, NotesItem, TheModal, TheLoader },
   setup() {
     const router = useRouter();
     const auth = getAuth();
@@ -63,31 +71,32 @@ export default {
     const isOpenModal = ref(false);
     const search = ref("");
     const modalHandler = ref(null);
+    const isLoading = ref(true);
 
-    const unsubscribeAdded = onChildAdded(notesRef, (note) => {
-      data.value.push({
-        id: note.key,
-        title: note.val().title,
-        description: note.val().description,
-        timestamp: note.val().timestamp,
-      });
-    });
-    const unsubscribeRemoved = onChildRemoved(notesRef, (note) => {
-      const index = data.value.findIndex((item) => item.id === note.key);
-      data.value.splice(index, 1);
-    });
-    const unsubscribeChanged = onChildChanged(notesRef, (note) => {
-      const index = data.value.findIndex((item) => item.id === note.key);
-      Object.assign(data.value[index], note.val());
+    const unsubscribe = onValue(notesRef, (snapshot) => {
+      data.value = [];
+      if (snapshot.exists()) {
+        const notes = snapshot.val();
+        for (const key in notes) {
+          data.value.push({
+            id: key,
+            ...notes[key],
+          });
+        }
+      }
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
     });
 
     const sortData = computed(() => {
+      if (!data.value.length) return [];
       data.value.sort((a, b) => b.timestamp - a.timestamp);
       const newData = data.value.map((item) => {
         const timestamp = formatTimestamp(item.timestamp);
         return { ...item, timestamp };
       });
-      if (!search) return newData;
+      if (!search.value) return newData;
       const regex = new RegExp(search.value, "i");
       return newData.filter(
         (d) => d.title.match(regex) || d.description.match(regex)
@@ -147,11 +156,7 @@ export default {
         });
     }
 
-    onUnmounted(() => {
-      unsubscribeAdded();
-      unsubscribeRemoved();
-      unsubscribeChanged();
-    });
+    onUnmounted(unsubscribe);
 
     return {
       sortData,
@@ -164,6 +169,7 @@ export default {
       exit,
       modalHandler,
       openModalEdit,
+      isLoading,
     };
   },
 };
@@ -244,5 +250,9 @@ export default {
     transform: scale(0.9);
     box-shadow: none;
   }
+}
+
+.not {
+  text-align: center;
 }
 </style>
