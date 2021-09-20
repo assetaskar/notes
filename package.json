@@ -10,6 +10,7 @@
   "dependencies": {
     "@vuelidate/core": "*",
     "@vuelidate/validators": "*",
+    "animate.css": "^4.1.1",
     "autosize": "^5.0.1",
     "core-js": "^3.6.5",
     "firebase": "^9.0.2",

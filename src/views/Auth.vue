@@ -21,10 +21,10 @@ export default {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background-color: #7f63f4;
 
   &__left {
     flex-grow: 1;
-    background-color: #7f63f4;
     color: #fff;
   }
 

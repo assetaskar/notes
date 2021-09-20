@@ -1,31 +1,39 @@
 <template>
-  <div class="account">
-    <h1 class="account__h1">{{ name.title }}</h1>
-    <the-form @submit.prevent="submitHandler" :btn="name.btn">
-      <the-form-input
-        label="Email*"
-        placeholder="yourname@company.com"
-        :validation="v$.email"
-        v-model.trim="state.email"
-      />
-      <the-form-input
-        type="password"
-        label="Пароль*"
-        placeholder="******"
-        :validation="v$.password"
-        v-model.trim="state.password"
-      />
-    </the-form>
-    <div class="account__toggle">
-      {{ name.toggle.text }}
-      <button class="account__toggle-btn" @click="toggleHandler">
-        {{ name.toggle.btn }}
-      </button>
+  <transition
+    appear
+    enter-active-class="animate__animated animate__bounceInRight"
+    leave-active-class="animate__animated animate__bounceOutRight"
+    mode="out-in"
+    :duration="1000"
+  >
+    <div class="account" :key="authType">
+      <h1 class="account__h1">{{ name.title }}</h1>
+      <the-form @submit.prevent="submitHandler" :btn="name.btn">
+        <the-form-input
+          label="Email*"
+          placeholder="yourname@company.com"
+          :validation="v$.email"
+          v-model.trim="state.email"
+        />
+        <the-form-input
+          type="password"
+          label="Пароль*"
+          placeholder="******"
+          :validation="v$.password"
+          v-model.trim="state.password"
+        />
+      </the-form>
+      <div class="account__toggle">
+        {{ name.toggle.text }}
+        <button class="account__toggle-btn" @click="toggleHandler">
+          {{ name.toggle.btn }}
+        </button>
+      </div>
+      <div class="account__footer">
+        {{ new Date().getFullYear() }} Copyrights &copy; NOTES
+      </div>
     </div>
-    <div class="account__footer">
-      {{ new Date().getFullYear() }} Copyrights &copy; NOTES
-    </div>
-  </div>
+  </transition>
 </template>
 
 <script>
@@ -120,6 +128,7 @@ export default {
       name,
       submitHandler,
       toggleHandler,
+      authType,
     };
   },
 };

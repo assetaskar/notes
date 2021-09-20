@@ -12,18 +12,31 @@
         <the-loader />
         <the-loader />
       </div>
-      <div v-else-if="sortData.length">
-        <notes-item
-          v-for="note of sortData"
-          :key="note.id"
-          :data="note"
-          @edit="openModalEdit"
-        />
-      </div>
-      <div v-else class="not">
-        <img src="../assets/notes.svg" alt="notes-icon" />
-        <p>Нет заметок</p>
-      </div>
+      <transition
+        enter-active-class="animate__animated animate__fadeIn"
+        leave-active-class="animate__animated animate__fadeOut"
+        mode="out-in"
+        duration="1000"
+      >
+        <div v-if="sortData.length">
+          <transition-group
+            enter-active-class="animate__animated animate__fadeInLeft"
+            leave-active-class="animate__animated animate__fadeOutRight"
+            move-class="note-item-move"
+          >
+            <notes-item
+              v-for="note of sortData"
+              :key="note.id"
+              :data="note"
+              @edit="openModalEdit"
+            />
+          </transition-group>
+        </div>
+        <div v-else-if="!sortData.length && !isLoading" class="not">
+          <img src="../assets/notes.svg" alt="notes-icon" />
+          <p>Нет заметок</p>
+        </div>
+      </transition>
     </div>
   </main>
   <button class="modal-open" v-if="!isOpenModal" @click="openModalAdd"></button>
@@ -176,11 +189,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.note-item-move {
+  transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
 .main {
   background-color: #ebebeb;
   min-height: 100vh;
   width: 100%;
   padding: 15px 0 70px;
+  overflow: hidden;
 
   &__header {
     display: flex;

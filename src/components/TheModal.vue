@@ -1,32 +1,38 @@
 <template>
-  <teleport v-if="isOpen" to="body">
-    <div class="modal">
-      <div class="modal__wrap">
-        <div class="modal__buttons">
-          <button
-            class="modal__btn modal__btn-back"
-            @click="$emit('close')"
-          ></button>
-          <button
-            class="modal__btn modal__btn-check"
-            v-if="input || textarea"
-            @click="$emit('handler')"
-          ></button>
+  <teleport to="body">
+    <transition
+      enter-active-class="animate__animated animate__flipInX"
+      leave-active-class="animate__animated animate__flipOutX"
+      :duration="800"
+    >
+      <div class="modal" v-if="isOpen">
+        <div class="modal__wrap">
+          <div class="modal__buttons">
+            <button
+              class="modal__btn modal__btn-back"
+              @click="$emit('close')"
+            ></button>
+            <button
+              class="modal__btn modal__btn-check"
+              v-if="input || textarea"
+              @click="$emit('handler')"
+            ></button>
+          </div>
+          <input
+            type="text"
+            class="modal__input"
+            placeholder="Заголовок"
+            :value="input"
+            @input="$emit('update:input', $event.target.value)"
+          />
+          <the-textarea
+            :value="textarea"
+            @input="$emit('update:textarea', $event.target.value)"
+            placeholder="Начните ввод"
+          />
         </div>
-        <input
-          type="text"
-          class="modal__input"
-          placeholder="Заголовок"
-          :value="input"
-          @input="$emit('update:input', $event.target.value)"
-        />
-        <the-textarea
-          :value="textarea"
-          @input="$emit('update:textarea', $event.target.value)"
-          placeholder="Начните ввод"
-        />
       </div>
-    </div>
+    </transition>
   </teleport>
 </template>
 
@@ -60,7 +66,7 @@ export default {
   position: fixed;
   width: 100%;
   height: 100vh;
-  background-color: hsl(0, 0%, 79%);
+  background-color: transparent;
   left: 0;
   top: 0;
   padding: 10px;
