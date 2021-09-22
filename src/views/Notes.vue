@@ -4,7 +4,7 @@
       <header class="main__header">
         <the-search v-model.trim="search" />
         <div class="main__exit">
-          <button class="main__exit-btn" @click="exit"></button>
+          <button class="main__exit-btn" @click="exitHandler"></button>
         </div>
       </header>
       <div v-if="isLoading">
@@ -18,30 +18,30 @@
         mode="out-in"
         duration="1000"
       >
-        <div v-if="sortData.length">
+        <div v-if="getNotes.length">
           <transition-group
             enter-active-class="animate__animated animate__fadeInLeft"
             leave-active-class="animate__animated animate__fadeOutRight"
             move-class="note-item-move"
           >
             <notes-item
-              v-for="note of sortData"
+              v-for="note of getNotes"
               :key="note.id"
               :data="note"
               @edit="openModalEdit"
             />
           </transition-group>
         </div>
-        <div v-else-if="!sortData.length && !isLoading" class="not">
+        <div v-else-if="!getNotes.length && !isLoading" class="not">
           <img src="../assets/notes.svg" alt="notes-icon" />
           <p>Нет заметок</p>
         </div>
       </transition>
     </div>
   </main>
-  <button class="modal-open" v-if="!isOpenModal" @click="openModalAdd"></button>
+  <button class="modal-open" v-if="!isOpen" @click="openModalAdd"></button>
   <the-modal
-    :isOpen="isOpenModal"
+    :isOpen="isOpen"
     @close="closeModalHandler"
     @handler="modalHandler"
     v-model:input.trim="input"
@@ -50,136 +50,45 @@
 </template>
 
 <script>
-import { computed, ref } from "@vue/reactivity";
-import { onUnmounted } from "@vue/runtime-core";
 import { useRouter } from "vue-router";
-
-import { getAuth, signOut } from "firebase/auth";
-import {
-  getDatabase,
-  ref as fb_ref,
-  push,
-  set,
-  update,
-  onValue,
-} from "firebase/database";
 
 import TheSearch from "@/components/TheSearch.vue";
 import NotesItem from "@/components/NotesItem.vue";
 import TheModal from "@/components/TheModal.vue";
 import TheLoader from "@/components/TheLoader.vue";
+import useNotes from "@/composables/useNotes.js";
+import useNotesModal from "@/composables/useNotesModal.js";
+import { exit } from "@/api/notes.js";
 
 export default {
   name: "Notes",
   components: { TheSearch, NotesItem, TheModal, TheLoader },
   setup() {
     const router = useRouter();
-    const auth = getAuth();
-    const userId = auth.currentUser.uid;
-    const db = getDatabase();
-    const notesRef = fb_ref(db, "notes/" + userId);
-    const data = ref([]);
-    const input = ref("");
-    const textarea = ref("");
-    const isOpenModal = ref(false);
-    const search = ref("");
-    const modalHandler = ref(null);
-    const isLoading = ref(true);
 
-    const unsubscribe = onValue(notesRef, (snapshot) => {
-      data.value = [];
-      if (snapshot.exists()) {
-        const notes = snapshot.val();
-        for (const key in notes) {
-          data.value.push({
-            id: key,
-            ...notes[key],
-          });
-        }
-      }
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-    });
+    const { getNotes, search, isLoading } = useNotes();
 
-    const sortData = computed(() => {
-      if (!data.value.length) return [];
-      data.value.sort((a, b) => b.timestamp - a.timestamp);
-      const newData = data.value.map((item) => {
-        const timestamp = formatTimestamp(item.timestamp);
-        return { ...item, timestamp };
-      });
-      if (!search.value) return newData;
-      const regex = new RegExp(search.value, "i");
-      return newData.filter(
-        (d) => d.title.match(regex) || d.description.match(regex)
-      );
-    });
+    const {
+      input,
+      isOpen,
+      textarea,
+      modalHandler,
+      openModalAdd,
+      openModalEdit,
+      closeModalHandler,
+    } = useNotesModal();
 
-    function openModalAdd() {
-      modalHandler.value = pushData;
-      isOpenModal.value = true;
-    }
-    function openModalEdit(note) {
-      modalHandler.value = editData.bind(null, note.id);
-      input.value = note.title;
-      textarea.value = note.description;
-      isOpenModal.value = true;
-    }
-    function closeModalHandler() {
-      isOpenModal.value = false;
-      reset();
-    }
-    function reset() {
-      input.value = textarea.value = "";
-      modalHandler.value = null;
-    }
-    function pushData() {
-      const newPostRef = push(notesRef);
-      set(newPostRef, {
-        title: input.value,
-        description: textarea.value,
-        timestamp: Date.now(),
-      });
-      closeModalHandler();
-    }
-    function editData(id) {
-      update(fb_ref(db, `notes/${userId}/${id}`), {
-        title: input.value,
-        description: textarea.value,
-        timestamp: Date.now(),
-      });
-      closeModalHandler();
-    }
-    function formatTimestamp(time) {
-      const isToday = new Date().getDate() === new Date(time).getDate();
-      const options = isToday
-        ? { hour: "numeric", minute: "numeric" }
-        : { day: "numeric", month: "long" };
-      const method = isToday ? "toLocaleTimeString" : "toLocaleDateString";
-      return new Date(time)[method]("ru-RU", options);
-    }
-    function exit() {
-      signOut(auth)
-        .then(() => {
-          router.push({ name: "auth" });
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    onUnmounted(unsubscribe);
+    const exitHandler = exit(router);
 
     return {
-      sortData,
+      getNotes,
       input,
       textarea,
-      isOpenModal,
+      isOpen,
       openModalAdd,
       closeModalHandler,
       search,
-      exit,
+      exitHandler,
       modalHandler,
       openModalEdit,
       isLoading,
