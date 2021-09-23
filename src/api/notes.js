@@ -6,7 +6,7 @@ import {
   set,
   update,
 } from "@firebase/database";
-import { getAuth, signOut } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 export function subscribe(data, loading) {
   const db = getDatabase();
@@ -42,17 +42,4 @@ export function editing(id, data) {
   const auth = getAuth();
   const userId = auth.currentUser.uid;
   update(ref(db, `notes/${userId}/${id}`), data);
-}
-
-export function exit(router) {
-  const auth = getAuth();
-  return () => {
-    signOut(auth)
-      .then(() => {
-        router.push({ name: "auth" });
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
 }

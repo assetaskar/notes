@@ -4,7 +4,7 @@
       <header class="main__header">
         <the-search v-model.trim="search" />
         <div class="main__exit">
-          <button class="main__exit-btn" @click="exitHandler"></button>
+          <button class="main__exit-btn" @click="exit"></button>
         </div>
       </header>
       <div v-if="isLoading">
@@ -58,7 +58,7 @@ import TheModal from "@/components/TheModal.vue";
 import TheLoader from "@/components/TheLoader.vue";
 import useNotes from "@/composables/useNotes.js";
 import useNotesModal from "@/composables/useNotesModal.js";
-import { exit } from "@/api/notes.js";
+import { exit as authExit } from "@/api/auth.js";
 
 export default {
   name: "Notes",
@@ -78,7 +78,7 @@ export default {
       closeModalHandler,
     } = useNotesModal();
 
-    const exitHandler = exit(router);
+    const exit = authExit(router);
 
     return {
       getNotes,
@@ -88,7 +88,7 @@ export default {
       openModalAdd,
       closeModalHandler,
       search,
-      exitHandler,
+      exit,
       modalHandler,
       openModalEdit,
       isLoading,

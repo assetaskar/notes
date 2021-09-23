@@ -37,18 +37,13 @@
 </template>
 
 <script>
-import { computed, reactive, ref } from "@vue/reactivity";
 import { useRouter } from "vue-router";
-import useVuelidate from "@vuelidate/core";
-import { required, email, minLength } from "@vuelidate/validators";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
 
 import TheForm from "./TheForm.vue";
 import TheFormInput from "./TheFormInput.vue";
+
+import useValidate from "@/composables/useValidate.js";
+import useAuthType from "@/composables/useAuthType.js";
 
 export default {
   name: "AuthWindow",
@@ -56,71 +51,15 @@ export default {
   components: { TheForm, TheFormInput },
 
   setup() {
-    const state = reactive({
-      email: "",
-      password: "",
-    });
-    const rules = {
-      email: { required, email },
-      password: { required, minLength: minLength(6) },
-    };
-    const v$ = useVuelidate(rules, state);
-
-    const authType = ref("signIn");
-
-    const name = computed(() =>
-      authType.value === "signIn"
-        ? {
-            title: "Создать учетную запись",
-            btn: "Зарегистрируйтесь сейчас",
-            toggle: { text: "У меня есть аккаунт.", btn: "Войти" },
-          }
-        : {
-            title: "Вход в Ваш аккаунт",
-            btn: "Войти",
-            toggle: {
-              text: "У вас нет аккаунта?",
-              btn: "Зарегистрируйтесь сейчас",
-            },
-          }
-    );
-
-    const toggleHandler = () => {
-      v$.value.$reset();
-      authType.value === "signIn"
-        ? (authType.value = "login")
-        : (authType.value = "signIn");
-    };
-
-    const auth = getAuth();
     const router = useRouter();
-    const signIn = () => {
-      createUserWithEmailAndPassword(auth, state.email, state.password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          router.push({ name: "notes", params: { id: user.uid } });
-        })
-        .catch((error) => {
-          console.log(error.errorCode);
-          console.log(error.errorMessage);
-        });
-    };
-    const login = () => {
-      signInWithEmailAndPassword(auth, state.email, state.password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          router.push({ name: "notes", params: { id: user.uid } });
-        })
-        .catch((error) => {
-          console.log(error.errorCode);
-          console.log(error.errorMessage);
-        });
-    };
-    const submitHandler = () => {
-      v$.value.$touch();
-      if (v$.value.$error) return;
-      authType.value === "signIn" ? signIn() : login();
-    };
+
+    const { state, v$ } = useValidate();
+
+    const { authType, name, toggleHandler, submitHandler } = useAuthType(
+      router,
+      state,
+      v$
+    );
 
     return {
       v$,
