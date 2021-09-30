@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Auth from "../views/Auth.vue";
+
+const Auth = () => import(/* webpackChunkName: "auth" */ "../views/Auth.vue");
+const Notes = () =>
+  import(/* webpackChunkName: "notes" */ "../views/Notes.vue");
 
 const routes = [
   {
@@ -22,9 +25,7 @@ const routes = [
   {
     path: "/notes/:id",
     name: "notes",
-    component: () => {
-      return import(/* webpackChunkName: "notes" */ "../views/Notes.vue");
-    },
+    component: Notes,
     beforeEnter: (to, from, next) => {
       const auth = getAuth();
       const unsubscribe = onAuthStateChanged(auth, (user) => {
