@@ -1,5 +1,4 @@
 import { computed, ref } from "@vue/reactivity";
-import { sign_in, log_in } from "@/api/auth.js";
 
 const text = {
   signIn: {
@@ -17,13 +16,11 @@ const text = {
   },
 };
 
-export default function useAuthType(router, state, validate) {
+export default function useAuthType(validate, { signIn, login, changeError }) {
   const authType = ref("signIn");
   const name = computed(() =>
     authType.value === "signIn" ? text.signIn : text.logIn
   );
-  const signIn = sign_in(router, state);
-  const login = log_in(router, state);
 
   function submitHandler() {
     validate.value.$touch();
@@ -31,6 +28,7 @@ export default function useAuthType(router, state, validate) {
     authType.value === "signIn" ? signIn() : login();
   }
   function toggleHandler() {
+    changeError("");
     validate.value.$reset();
     authType.value = authType.value === "signIn" ? "login" : "signIn";
   }

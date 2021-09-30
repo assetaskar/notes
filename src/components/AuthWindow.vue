@@ -22,6 +22,7 @@
           :validation="v$.password"
           v-model.trim="state.password"
         />
+        <p class="error" v-if="error">{{ error }}</p>
       </the-form>
       <div class="account__toggle">
         {{ name.toggle.text }}
@@ -44,6 +45,8 @@ import TheFormInput from "./TheFormInput.vue";
 
 import useValidate from "@/composables/useValidate.js";
 import useAuthType from "@/composables/useAuthType.js";
+import useAuthError from "@/composables/useAuthError.js";
+import { sign_in, log_in } from "@/api/auth.js";
 
 export default {
   name: "AuthWindow",
@@ -55,11 +58,16 @@ export default {
 
     const { state, v$ } = useValidate();
 
-    const { authType, name, toggleHandler, submitHandler } = useAuthType(
-      router,
-      state,
-      v$
-    );
+    const { error, changeError } = useAuthError();
+
+    const signIn = sign_in(router, state, changeError);
+    const login = log_in(router, state, changeError);
+
+    const { authType, name, toggleHandler, submitHandler } = useAuthType(v$, {
+      signIn,
+      login,
+      changeError,
+    });
 
     return {
       v$,
@@ -68,6 +76,7 @@ export default {
       submitHandler,
       toggleHandler,
       authType,
+      error,
     };
   },
 };
@@ -114,5 +123,11 @@ export default {
   &__footer {
     font-size: 14px;
   }
+}
+
+.error {
+  color: hsl(0, 100%, 60%);
+  font-size: 12px;
+  margin-bottom: 20px;
 }
 </style>

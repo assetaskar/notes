@@ -5,32 +5,32 @@ import {
   signOut,
 } from "@firebase/auth";
 
-export function sign_in(router, state) {
+export function sign_in(router, state, callbackError) {
   const auth = getAuth();
   return () => {
     createUserWithEmailAndPassword(auth, state.email, state.password)
-      .then((userCredential) => {
-        const user = userCredential.user;
+      .then(({ user }) => {
+        callbackError("");
         router.push({ name: "notes", params: { id: user.uid } });
       })
-      .catch((error) => {
-        console.log(error.errorCode);
-        console.log(error.errorMessage);
+      .catch(({ code }) => {
+        code === "auth/email-already-in-use" &&
+          callbackError("Email уже существует");
       });
   };
 }
 
-export function log_in(router, state) {
+export function log_in(router, state, callbackError) {
   const auth = getAuth();
   return () => {
     signInWithEmailAndPassword(auth, state.email, state.password)
-      .then((userCredential) => {
-        const user = userCredential.user;
+      .then(({ user }) => {
+        callbackError("");
         router.push({ name: "notes", params: { id: user.uid } });
       })
-      .catch((error) => {
-        console.log(error.errorCode);
-        console.log(error.errorMessage);
+      .catch(({ code }) => {
+        code === "auth/user-not-found" &&
+          callbackError("Пользователь не найден");
       });
   };
 }
