@@ -31,6 +31,7 @@ export function log_in(router, state, callbackError) {
       .catch(({ code }) => {
         code === "auth/user-not-found" &&
           callbackError("Пользователь не найден");
+        code === "auth/wrong-password" && callbackError("Неправильный пароль");
       });
   };
 }
